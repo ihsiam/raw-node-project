@@ -3,6 +3,7 @@ const url = require('url');
 const { StringDecoder } = require('string_decoder');
 const route = require('../routes/router');
 const { notFoundHandler } = require('./routerHandler');
+const { parseJSON } = require('../lib/Utility');
 
 // handler object
 const handler = {};
@@ -36,8 +37,9 @@ handler.handleReqRes = (req, res) => {
 
     req.on('end', () => {
         data += decoder.end();
-        console.log(data);
 
+        // pass body data
+        reqObj.body = parseJSON(data);
         // connect to routing handler
         const chosenHandler = route[treamedPath] ? route[treamedPath] : notFoundHandler;
 
@@ -49,6 +51,7 @@ handler.handleReqRes = (req, res) => {
             const payloadString = JSON.stringify(Payload);
 
             // response send
+            res.setHeader('Content-Type', 'application/json');
             res.writeHead(StatusCode);
             res.end(payloadString);
         });

@@ -9,16 +9,16 @@ const app = {};
 // port define
 const port = process.env.PORT || 5000;
 
+// handle request & response
+app.handleReqRes = handleReqRes;
+
 // create server
-app.createServer = () => {
-    const server = http.createServer(app.handleReqRes);
-    server.listen(port, () => {
+app.Server = () => {
+    const createServer = http.createServer(app.handleReqRes);
+    createServer.listen(port, () => {
         console.log(`Server is running at: http://localhost:${port}`);
     });
 };
 
-// handle response
-app.handleReqRes = handleReqRes;
-
 // start the server
-app.createServer();
+app.Server();
