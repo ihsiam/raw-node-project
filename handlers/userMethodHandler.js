@@ -2,6 +2,7 @@
 // dependencies
 const { hash, parseJSON } = require('../lib/Utility');
 const fileSystem = require('../lib/fileSystem');
+const { tokenVerify } = require('./tokenMethodHandler');
 
 // userHandler obj
 const userMethodHandler = {};
@@ -61,20 +62,33 @@ userMethodHandler.get = (reqObj, callback) => {
     const Phone = typeof phone === 'string' && phone.trim().length === 11 ? phone : false;
 
     if (Phone) {
-        fileSystem.read('users', Phone, (err, data) => {
-            if (!err && data) {
-                const user = { ...parseJSON(data) };
-                delete user.Pass;
-                callback(200, user);
+        const { tokenid } = reqObj.headerObj;
+        const TokenId =
+            typeof tokenid === 'string' && tokenid.trim().length === 20 ? tokenid : false;
+
+        // verify and procced
+        tokenVerify(TokenId, Phone, (verify) => {
+            if (verify) {
+                fileSystem.read('users', Phone, (err, data) => {
+                    if (!err && data) {
+                        const user = { ...parseJSON(data) };
+                        delete user.Pass;
+                        callback(200, user);
+                    } else {
+                        callback(400, {
+                            msg: 'User data not found',
+                        });
+                    }
+                });
             } else {
-                callback(400, {
-                    msg: 'User data not found',
+                callback(403, {
+                    msg: 'Unauthorised or token expired',
                 });
             }
         });
     } else {
         callback(400, {
-            msg: 'User not found',
+            msg: 'You have a problem on your request',
         });
     }
 };
@@ -93,35 +107,48 @@ userMethodHandler.put = (reqObj, callback) => {
 
     if (Phone) {
         if (FirstName || LastName || Pass) {
-            fileSystem.read('users', Phone, (readErr, data) => {
-                if (!readErr && data) {
-                    const user = { ...parseJSON(data) };
+            const { tokenid } = reqObj.headerObj;
+            const TokenId =
+                typeof tokenid === 'string' && tokenid.trim().length === 20 ? tokenid : false;
 
-                    // update data
-                    if (FirstName) {
-                        user.FirstName = FirstName;
-                    }
-                    if (LastName) {
-                        user.LastName = LastName;
-                    }
-                    if (FirstName) {
-                        user.Pass = hash(Pass);
-                    }
+            // verify and procced
+            tokenVerify(TokenId, Phone, (verify) => {
+                if (verify) {
+                    fileSystem.read('users', Phone, (readErr, data) => {
+                        if (!readErr && data) {
+                            const user = { ...parseJSON(data) };
 
-                    fileSystem.update('users', Phone, user, (updateErr) => {
-                        if (!updateErr) {
-                            callback(200, {
-                                msg: 'Updated',
+                            // update data
+                            if (FirstName) {
+                                user.FirstName = FirstName;
+                            }
+                            if (LastName) {
+                                user.LastName = LastName;
+                            }
+                            if (FirstName) {
+                                user.Pass = hash(Pass);
+                            }
+
+                            fileSystem.update('users', Phone, user, (updateErr) => {
+                                if (!updateErr) {
+                                    callback(200, {
+                                        msg: 'Updated',
+                                    });
+                                } else {
+                                    callback(500, {
+                                        msg: 'Server Problem',
+                                    });
+                                }
                             });
                         } else {
-                            callback(500, {
-                                msg: 'Server Problem',
+                            callback(400, {
+                                msg: 'Problem in request',
                             });
                         }
                     });
                 } else {
-                    callback(400, {
-                        msg: 'Problem in request',
+                    callback(403, {
+                        msg: 'Unauthorised or token expired',
                     });
                 }
             });
@@ -143,22 +170,35 @@ userMethodHandler.delete = (reqObj, callback) => {
     const Phone = typeof phone === 'string' && phone.trim().length === 11 ? phone : false;
 
     if (Phone) {
-        fileSystem.read('users', Phone, (readErr, data) => {
-            if (!readErr && data) {
-                fileSystem.delete('users', Phone, (err) => {
-                    if (!err) {
-                        callback(200, {
-                            msg: 'User deleted',
+        const { tokenid } = reqObj.headerObj;
+        const TokenId =
+            typeof tokenid === 'string' && tokenid.trim().length === 20 ? tokenid : false;
+
+        // verify and procced
+        tokenVerify(TokenId, Phone, (verify) => {
+            if (verify) {
+                fileSystem.read('users', Phone, (readErr, data) => {
+                    if (!readErr && data) {
+                        fileSystem.delete('users', Phone, (err) => {
+                            if (!err) {
+                                callback(200, {
+                                    msg: 'User deleted',
+                                });
+                            } else {
+                                callback(400, {
+                                    msg: 'User data not found',
+                                });
+                            }
                         });
                     } else {
                         callback(400, {
-                            msg: 'User data not found',
+                            msg: 'No user with this phone',
                         });
                     }
                 });
             } else {
-                callback(400, {
-                    msg: 'User data not found',
+                callback(403, {
+                    msg: 'Unauthorised or token expired',
                 });
             }
         });
