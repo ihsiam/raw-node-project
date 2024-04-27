@@ -2,12 +2,11 @@
 // dependencies
 const { parseJSON, randomString } = require('../lib/Utility');
 const fileSystem = require('../lib/fileSystem');
-// const { tokenVerify } = require('./tokenMethodHandler');
 
 // userHandler obj
 const checkMethodHandler = {};
 
-// create user
+// create check
 checkMethodHandler.post = (reqObj, userData, callback) => {
     // eslint-disable-next-line object-curly-newline
     const { protocol, url, method, succCode, timeOut } = reqObj.body;
@@ -29,6 +28,8 @@ checkMethodHandler.post = (reqObj, userData, callback) => {
         const Checks = typeof checks === 'object' && checks instanceof Array ? checks : [];
         if (Checks.length <= 5) {
             const CheckID = randomString(20);
+
+            // check obj
             const checkObj = {
                 CheckID,
                 Protocol,
@@ -37,7 +38,7 @@ checkMethodHandler.post = (reqObj, userData, callback) => {
                 SuccCode,
                 TimeOut,
             };
-            // create check
+            // create check file
             fileSystem.create('checks', CheckID, checkObj, (createErr) => {
                 if (!createErr) {
                     UserData.checks = Checks;
@@ -71,8 +72,9 @@ checkMethodHandler.post = (reqObj, userData, callback) => {
     }
 };
 
-// get user data
+// get check data
 checkMethodHandler.get = (reqObj, userData, callback) => {
+    // get check id
     const { id } = reqObj.queryStringObj;
     const Id = typeof id === 'string' && id.trim().length === 20 ? id : false;
 
@@ -94,8 +96,9 @@ checkMethodHandler.get = (reqObj, userData, callback) => {
     }
 };
 
-// update user data
+// update check data
 checkMethodHandler.put = (reqObj, userData, callback) => {
+    // get check id
     const { id } = reqObj.queryStringObj;
     const Id = typeof id === 'string' && id.trim().length === 20 ? id : false;
 
@@ -118,6 +121,7 @@ checkMethodHandler.put = (reqObj, userData, callback) => {
                 if (!readErr && checkData) {
                     const CheckData = { ...parseJSON(checkData) };
 
+                    // update data
                     if (Protocol) {
                         CheckData.Protocol = Protocol;
                     }
@@ -134,6 +138,7 @@ checkMethodHandler.put = (reqObj, userData, callback) => {
                         CheckData.TimeOut = TimeOut;
                     }
 
+                    // update in file
                     fileSystem.update('checks', Id, CheckData, (updateErr) => {
                         if (!updateErr) {
                             callback(400, {
@@ -163,14 +168,16 @@ checkMethodHandler.put = (reqObj, userData, callback) => {
     }
 };
 
-// delete user data
+// delete check data
 checkMethodHandler.delete = (reqObj, userData, callback) => {
+    // get check id
     const { id } = reqObj.queryStringObj;
     const Id = typeof id === 'string' && id.trim().length === 20 ? id : false;
 
     if (Id) {
         fileSystem.read('checks', Id, (readErr, data) => {
             if (!readErr && data) {
+                // delete from check folder
                 fileSystem.delete('checks', Id, (delErr) => {
                     if (!delErr) {
                         const UserData = parseJSON(userData);
@@ -179,9 +186,11 @@ checkMethodHandler.delete = (reqObj, userData, callback) => {
                             typeof checks === 'object' && checks instanceof Array ? checks : [];
 
                         const pos = Checks.indexOf(Id);
+                        // delte from user check obj
                         Checks.splice(pos, 1);
                         UserData.checks = Checks;
 
+                        // update changes
                         fileSystem.update('users', Phone, UserData, (UpErr) => {
                             if (!UpErr) {
                                 callback(200, {
