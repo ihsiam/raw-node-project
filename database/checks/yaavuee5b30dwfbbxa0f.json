@@ -1,0 +1,8 @@
+{
+  "CheckID": "yaavuee5b30dwfbbxa0f",
+  "Protocol": "http",
+  "URL": "youtube.com",
+  "Method": "get",
+  "SuccCode": [202, 202],
+  "TimeOut": 2
+}
