@@ -1,24 +1,18 @@
 // dependencies
-const http = require('http');
-const { handleReqRes } = require('./handlers/handleReqRes');
-require('dotenv').config();
+const server = require('./lib/server');
+const worker = require('./lib/worker');
 
 // app object
 const app = {};
 
-// port define
-const port = process.env.PORT || 5000;
+// initialize server and worker
+app.init = () => {
+    // server init
+    server.init();
 
-// handle request & response
-app.handleReqRes = handleReqRes;
-
-// create server
-app.Server = () => {
-    const createServer = http.createServer(app.handleReqRes);
-    createServer.listen(port, () => {
-        console.log(`Server is running at: http://localhost:${port}`);
-    });
+    // worker init
+    worker.init();
 };
 
-// start the server
-app.Server();
+// run the application
+app.init();
